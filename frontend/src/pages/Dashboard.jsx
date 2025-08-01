@@ -1,31 +1,38 @@
-import React, { useEffect, useState } from "react";
-import Appbar from "../components/Appbar";
-import Balance from "../components/Balance";
-import { useRecoilValue } from "recoil";
-import { tokenAtom, userAtom } from "../store/atoms";
-import { getBalance } from "../services/operations/transactionApi";
-import { Users } from "../components/Users";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Appbar } from "../components/Appbar"
+import { Balance } from "../components/Balance"
+import { Users } from "../components/Users"
 
-const Dashboard = () => {
-  const [balance, setBalance] = useState("");
-  const token = useRecoilValue(tokenAtom);
-  const user = useRecoilValue(userAtom);
+export const Dashboard = () => {
+    const [balance, setBalance] = useState(null);
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const userBalance = await getBalance(token);
-      setBalance(userBalance);
-    };
-    fetchBalance();
-  }, [token]);
+    useEffect(() => {
+        const fetchBalance = async () => {
+            try {
+                const response = await axios.get("http://localhost:3000/api/v1/account/balance", {
+                    headers: {
+                        Authorization: "Bearer " + localStorage.getItem("token")
+                    }
+                });
 
-  return (
-    <div>
-      <Appbar user={user.firstname} />
-      <Balance balance={balance} />
-      <Users />
-    </div>
-  );
+                setBalance(response.data.balance);
+            } catch (err) {
+                console.error("Error fetching balance", err);
+                setBalance("Error");
+            }
+        };
+
+        fetchBalance();
+    }, []);
+
+    return (
+        <div>
+            <Appbar />
+            <div className="m-8">
+                <Balance balance={balance !== null ? `₹${balance.toFixed(2)}` : "Loading..."} />
+                <Users />
+            </div>
+        </div>
+    );
 };
-
-export default Dashboard;
